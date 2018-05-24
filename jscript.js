@@ -1,29 +1,19 @@
 // Store our API endpoint as queryUrl
 let queryUrl = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2012-03-04&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
+let plates = "/data/plates.json";
+
 function markerSize(eq) {
   return (Math.pow(eq,5))*8;
 }
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
-  makeAMap(data.features)
-  console.log(data.features);
-  // Using the features array sent back in the API data, create a GeoJSON layer and add it to the map
+  d3.json(plates, function(data2) {
+    makeAMap(data.features, data2)
+    console.log(data2);
+    })
 });
 
-function makeAMap(earthquakes) {
-  console.log(earthquakes);
-  /*
-  let eqs = earthquakes.map((eq, index) => {
-    return [
-      {
-        coordinates: eq.geometry.coordinates,
-        magnitude: eq.properties.mag,
-        time: eq.properties.time
-      }
-    ];
-  });
-  */
-
+function makeAMap(earthquakes, plates) {
   let eqMarkers = [];
   for (let i = 0, ii = earthquakes.length; i < ii; i++) {
     let eq = earthquakes[i];
@@ -54,7 +44,7 @@ function makeAMap(earthquakes) {
 
   let overlayMaps = {
     "Earthquake Map": eqLayer
-  }
+  };
 
   // Create a new map
   let myMap = L.map("map", {

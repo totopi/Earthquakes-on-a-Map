@@ -1,9 +1,11 @@
 // Store our API endpoint as queryUrl
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
+let marchUrl = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2012-03-04&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
+let plates = "data/boundaries.json";
 
 // Function to size the markers nicely
 function markerSize(eq) {
-  return (Math.pow(eq, 3) / 2);
+  return (Math.pow(eq, 3) / 2.3);
 }
 
 // Function to color the markers nicely
@@ -14,20 +16,26 @@ function markerColor(mag) {
 
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
-  //console.log(data)
-  createFeature(data)
-  //console.log(data.features);
-  // Using the features array sent back in the API data, create a GeoJSON layer and add it to the map
+  d3.json(marchUrl, function(jdata) {
+    d3.json(plates, function(data2) {
+      //console.log(data)
+      createFeature(data, jdata, data2)
+      //console.log(data.features);
+      // Using the features array sent back in the API data, create a GeoJSON layer and add it to the map
+    })
+  })  
 });
 
-function createFeature(earthquakeData) {
+function createFeature(earthquakeData, marchMemories, platesData) {
   function onEachFeature(feature, layer) {
     layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><p>" + 
     new Date(feature.properties.time) + "<br />Magintude: " + feature.properties.mag + "</p>");
   }
   console.log(earthquakeData.features)
 
-
+  let tectonicPlates = L.geoJSON(platesData, {
+    style: {"fillColor": "none"}
+  });
   let earthquakes = L.geoJSON(earthquakeData, {
     onEachFeature: onEachFeature,
       pointToLayer: function (feature, latlng) {
@@ -41,11 +49,25 @@ function createFeature(earthquakeData) {
       });
      }
     });
+  
+  let jearthquakes = L.geoJSON(marchMemories, {
+    onEachFeature: onEachFeature,
+      pointToLayer: function (feature, latlng) {
+      return L.circleMarker(latlng, {
+        radius: Math.pow(feature.properties.mag, 2),
+        stroke: true,
+        color: 'black',
+        weight: 1,
+        fillColor: markerColor(feature.properties.mag),
+        fillOpacity: 0.5
+      });
+      }
+    });
 
-  makeAMap(earthquakes);
+  makeAMap(earthquakes, jearthquakes, tectonicPlates);
 }
 
-function makeAMap(eq) {
+function makeAMap(eq, jeq, plate) {
   console.log(eq);
 /*
   let earthquakes = eq.features
@@ -71,20 +93,38 @@ function makeAMap(eq) {
   }
   console.log(eqMarkers);
   */
-  // Define streetmap and darkmap layers
-  let streetmap = L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/outdoors-v10/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  // Define various map layers
+  let streetmap = L.tileLayer("http://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NDg1bDA1cjYzM280NHJ5NzlvNDMifQ.d6e-nNyBDtmQCVwVNivz7A");
+  let darkmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.dark/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let lightmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let satmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let wheatmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.wheatpaste/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let piratemap = L.tileLayer("https://api.mapbox.com/v4/mapbox.pirates/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let comicmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.comic/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let emeraldmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.emerald/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
+  let pencilmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.pencil/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
 
-  let darkmap = L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
 
   let eqLayer = L.layerGroup(eq);
+  let jeqLayer = L.layerGroup(jeq);
+  let plateLayer = L.layerGroup(plate);
   // Define a baseMaps object to hold our base layers
   let baseMaps = {
+    "Pirate Map": piratemap,
     "Street Map": streetmap,
-    "Dark Map": darkmap
+    "Satellite Map": satmap,
+    "Wheat Paste Map": wheatmap,
+    "Light Map": lightmap,
+    "Dark Map": darkmap,
+    "Comic Map": comicmap,
+    "Emerald Map": emeraldmap,
+    "Pencil Map": pencilmap
   };
 
   let overlayMaps = {
-    "Earthquake Map": eq
+    "Earthquake Map": eq,
+    "Tectonic Plates Map": plate,
+    "3/11 1 Year Map": jeq
   }
 
   // Create a new map
@@ -93,7 +133,7 @@ function makeAMap(eq) {
       34, -118
     ],
     zoom: 7,
-    layers: [streetmap, eq]
+    layers: [piratemap, eq, plate]
   });
 
   // Create a layer control containing our baseMaps
