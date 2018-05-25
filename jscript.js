@@ -1,5 +1,5 @@
 // Store our API endpoint as queryUrl
-let queryUrl = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2011-10-08&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
+let queryUrl = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2011-7-13&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
 let plates = "data/boundaries.json";
 
 // Function to size the markers nicely
@@ -30,7 +30,7 @@ function createFeature(earthquakeData, platesData) {
     // map for 150 minutes or 2.5 hours
     return {
       start: quake.properties.time,
-      end:   quake.properties.time + (1000 * 60 * 60 * 24)
+      end:   quake.properties.time + quake.properties.mag * (1000 * 60 * 10 * 30)
     };
   };
   function onEachFeature(feature, layer) {
@@ -88,7 +88,7 @@ function makeAMap(eq, plate) {
   };
 
   let overlayMaps = {
-    "3/11/2011 1 Year Map": eq,
+    "3/11/2011 3 Months Map": eq,
     "Tectonic Plates Map": plate
   }
 
