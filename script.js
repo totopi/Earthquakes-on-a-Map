@@ -1,6 +1,6 @@
 // Store our API endpoint as queryUrl
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
-let marchUrl = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2012-03-04&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
+let marchUrl = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2012-03-04&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
 let plates = "data/boundaries.json";
 
 // Function to size the markers nicely
@@ -16,17 +16,24 @@ function markerColor(mag) {
 
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
-  d3.json(marchUrl, function(jdata) {
-    d3.json(plates, function(data2) {
-      //console.log(data)
-      createFeature(data, jdata, data2)
-      //console.log(data.features);
-      // Using the features array sent back in the API data, create a GeoJSON layer and add it to the map
-    })
-  })  
+  d3.json(plates, function(data2) {
+    createFeature(data, data2)
+    //console.log(data.features);
+    // Using the features array sent back in the API data, create a GeoJSON layer and add it to the map
+  })
 });
 
-function createFeature(earthquakeData, marchMemories, platesData) {
+function createFeature(earthquakeData, platesData) {
+  let getInterval = function(quake) {
+    // earthquake data only has a time, so we'll use that as a "start"
+    // and the "end" will be that + some value based on magnitude
+    // 18000000 = 30 minutes, so a quake of magnitude 5 would show on the
+    // map for 150 minutes or 2.5 hours
+    return {
+      start: quake.properties.time,
+      end:   quake.properties.time + quake.properties.mag * 1800000 * 7
+    };
+  };
   function onEachFeature(feature, layer) {
     layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><p>" + 
     new Date(feature.properties.time) + "<br />Magintude: " + feature.properties.mag + "</p>");
@@ -36,7 +43,8 @@ function createFeature(earthquakeData, marchMemories, platesData) {
   let tectonicPlates = L.geoJSON(platesData, {
     style: {"fillColor": "none"}
   });
-  let earthquakes = L.geoJSON(earthquakeData, {
+  let earthquakes = L.timeline(earthquakeData, {
+    getInterval: getInterval,
     onEachFeature: onEachFeature,
       pointToLayer: function (feature, latlng) {
       return L.circleMarker(latlng, {
@@ -49,50 +57,11 @@ function createFeature(earthquakeData, marchMemories, platesData) {
       });
      }
     });
-  
-  let jearthquakes = L.geoJSON(marchMemories, {
-    onEachFeature: onEachFeature,
-      pointToLayer: function (feature, latlng) {
-      return L.circleMarker(latlng, {
-        radius: Math.pow(feature.properties.mag, 2),
-        stroke: true,
-        color: 'black',
-        weight: 1,
-        fillColor: markerColor(feature.properties.mag),
-        fillOpacity: 0.5
-      });
-      }
-    });
 
-  makeAMap(earthquakes, jearthquakes, tectonicPlates);
+  makeAMap(earthquakes, tectonicPlates);
 }
 
-function makeAMap(eq, jeq, plate) {
-  console.log(eq);
-/*
-  let earthquakes = eq.features
-  let eqmeta = {
-    "count": eq.count,
-    "time": eq.generated
-  }
-
-  let eqMarkers = [];
-  for (let i = 0, ii = earthquakes.length; i < ii; i++) {
-    let eq = earthquakes[i];
-    if (eq.properties.mag > 4) {
-    eqMarkers.push(
-      L.circle([eq.geometry.coordinates[1], eq.geometry.coordinates[0]], {
-        stroke: false,
-        fillOpacity: 0.25,
-        color: "blue",
-        fillColor: "blue",
-        radius: markerSize(eq.properties.mag)
-      })
-    );
-  }
-  }
-  console.log(eqMarkers);
-  */
+function makeAMap(eq, plate) {
   // Define various map layers
   let streetmap = L.tileLayer("http://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NDg1bDA1cjYzM280NHJ5NzlvNDMifQ.d6e-nNyBDtmQCVwVNivz7A");
   let darkmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.dark/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
@@ -104,9 +73,7 @@ function makeAMap(eq, jeq, plate) {
   let emeraldmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.emerald/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
   let pencilmap = L.tileLayer("https://api.mapbox.com/v4/mapbox.pencil/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidG90b3BpIiwiYSI6ImNqaDFhaGh6ejAxcW4yeHJ5aDl4bjZ2YngifQ.ssPdnszdafCcNm4753AVJA");
 
-
   let eqLayer = L.layerGroup(eq);
-  let jeqLayer = L.layerGroup(jeq);
   let plateLayer = L.layerGroup(plate);
   // Define a baseMaps object to hold our base layers
   let baseMaps = {
@@ -123,8 +90,7 @@ function makeAMap(eq, jeq, plate) {
 
   let overlayMaps = {
     "Earthquake Map": eq,
-    "Tectonic Plates Map": plate,
-    "3/11 1 Year Map": jeq
+    "Tectonic Plates Map": plate
   }
 
   // Create a new map
@@ -159,7 +125,14 @@ function makeAMap(eq, jeq, plate) {
   };
 
   legend.addTo(myMap);
+
+  let slider = L.timelineSliderControl({
+    formatOutput: function(date){
+      return new Date(date).toString();
+    }
+  });
+  slider.addTo(myMap);
+  slider.addTimelines(eq);
 };
 
-// japan center 35.6895, 139.6917
-
+// japan center 35.6895, 139.691
