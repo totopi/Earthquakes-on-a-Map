@@ -1,6 +1,5 @@
 // Store our API endpoint as queryUrl
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
-let marchUrl = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2011-03-04&endtime=2012-03-04&maxlongitude=156.6731&minlongitude=125.5571&maxlatitude=48.74894534&minlatitude=30.652832";
 let plates = "data/boundaries.json";
 
 // Function to size the markers nicely
