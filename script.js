@@ -1,5 +1,5 @@
 // Store our API endpoint as queryUrl
-let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
+let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson";
 let plates = "data/boundaries.json";
 
 // Function to size the markers nicely
